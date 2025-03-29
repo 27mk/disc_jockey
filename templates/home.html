@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spotify Streaming</title>
+</head>
+<body>
+    <h1>Welcome to Spotify Streaming</h1>
+
+    <!-- Spotify Player Container -->
+    <div id="player"></div>
+
+    <!-- Discogs Album Collection -->
+    <h2>Your Album Collection</h2>
+    <ul>
+        {% for album in album_data %}
+            <li>
+                <!-- Display Album Cover -->
+                <img src="{{ url_for('static', filename=album.id ~ '_front.jpg') }}" alt="Album Cover" style="width: 150px; height: 150px;">
+                <strong>{{ album.name }}</strong> ({{ album.release_year }})
+                <ul>
+                    {% for side, tracks in album.tracklist.items() %}
+                        <li><strong>{{ side }}:</strong>
+                            <ul>
+                                {% for track in tracks %}
+                                    <li>{{ track.title }}</li>
+                                {% endfor %}
+                            </ul>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </li>
+        {% endfor %}
+    </ul>
+
+</body>
+</html>
+

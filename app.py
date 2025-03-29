@@ -1,12 +1,17 @@
-from flask import Flask, render_template, jsonify
+from flask import Flask, render_template, jsonify, redirect, url_for, session, request
 import os
 import json
 import discogs_client
 from collections import defaultdict
 import re
 import time
+import requests
+import spotipy
+from spotipy.oauth2 import SpotifyClientCredentials
 
+# Load environment variables
 app = Flask(__name__)
+app.secret_key = os.urandom(24)
 
 #-DISCOGS---------------------------------------------------------------------------------------------------------------
 consumer_key = os.getenv("DISCOGS_CONSUMER_KEY")
@@ -31,6 +36,14 @@ def clean_text(text):
     return text
 
 def get_collection():
+    # Check if album_data.json exists
+    if os.path.exists("album_data.json"):
+        with open("album_data.json", "r") as json_file:
+            album_data = json.load(json_file)
+        print("Loaded album data from local file")
+        return album_data
+
+    # If album_data.json does not exist, fetch collection from Discogs
     access_token, access_secret = load_tokens()
 
     if not access_token or not access_secret:
@@ -38,10 +51,10 @@ def get_collection():
 
     client = discogs_client.Client(
         user_agent,
-        consumer_key = consumer_key,
-        consumer_secret = consumer_secret,
-        token = access_token,
-        secret = access_secret
+        consumer_key=consumer_key,
+        consumer_secret=consumer_secret,
+        token=access_token,
+        secret=access_secret
     )
 
     user = client.identity()
@@ -73,26 +86,19 @@ def get_collection():
 
         time.sleep(1)
 
-    # Save album data to a local JSON file
+    # Save the newly fetched album data to a local JSON file
     with open("album_data.json", "w") as json_file:
         json.dump(data, json_file, indent=4)
-    
+
+    print("Fetched new album data from Discogs")
     return data
 
-#-ROUTES----------------------------------------------------------------------------------------------------------------
 @app.route("/")
 def home():
-    return render_template("home.html")
+    album_data = get_collection()  # This now checks for the local file first
 
-@app.route("/discogs")
-def discogs():
-    album_data = get_collection()
-
-    if "error" in album_data:
-        return jsonify(album_data), 400
-
-    return render_template("test_page.html", album_data = album_data)
+    return render_template("home.html", album_data=album_data)
 
 if __name__ == "__main__":
-    app.run(debug = True)
+    app.run(debug=True)
 
