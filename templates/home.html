@@ -3,18 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scroll Animation</title>
+    <title>discJockey</title>
     <style>
         body {
             margin: 0;
-            font-size: 18px;
-            font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen,
-                Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
-            font-style: normal;
-            text-rendering: optimizeLegibility;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-            letter-spacing: 0.05em;
         }
 
         * {
@@ -23,21 +15,22 @@
         }
 
         .box {
-            width: 400px;  /* Change to 200px */
-            height: 400px; /* Height is also 200px to make it a square */
+            width: 400px;  /* Box width */
+            height: 400px; /* Box height */
             color: white;
             margin: 0 auto;
-            margin-bottom: 0px;
-            position: relative;  /* Ensure it's positioned relative for absolute positioning of child */
+            margin-bottom: 50px;
+            position: relative;  /* Make sure the box is positioned relative */
         }
 
         .box > div {
             display: flex;
             position: absolute;
             top: 0;
-            width: 400px; /* Update width */
-            height: 400px; /* Update height */
-            background: linear-gradient(220deg, #3d45b1, #844efc);
+            width: 400px; /* Box width */
+            height: 400px; /* Box height */
+            background-size: cover;
+            background-position: center;
             justify-content: space-between;
             flex-direction: column;
             padding: 16px;
@@ -47,62 +40,58 @@
             will-change: transform;
             overflow: hidden;
         }
-
-        .content {
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .label {
-            font-weight: bold;
-            font-size: 12px;
-            margin-bottom: 6px;
-        }
-
-        .value-right {
-            text-align: right;
-        }
-
-        /* New styling for the red square */
-        .red-square {
-            width: 100px;
-            height: 100px;
-            background-color: red;
-            border: 3px solid black;
-            position: absolute;
-            top: 50%; /* Center vertically */
-            left: 50%; /* Center horizontally */
-            transform: translate(-50%, -50%); /* Adjust positioning to truly center */
-        }
     </style>
 </head>
 <body>
     <script>
-        // Adding a small space before the boxes
-        document.body.innerHTML += `<div style="height: 16px"></div>`;
+        // Passing the album data directly from Flask
+        const albumData = {{ album_data | tojson }};  // Converts the album_data to a JavaScript object
 
-        // Generate 10 boxes dynamically
-        for (let i = 0; i < 10; i += 1) {
-            document.body.innerHTML += ` 
-                <div class="box"><div>
-                    <div class="red-square"></div>
-                    <div>Bank</div>
-                    <div class="content">
-                        <div>
-                            <div class="label">Card Holder name</div>
-                            <div class="value">Colin van Eenige</div>
-                        </div>
-                        <div>
-                            <div class="label">Expiry Date</div>
-                            <div class="value value-right">05/25</div>
-                        </div>
-                    </div>
-                </div></div>
-            `;
+        // Check if albumData is valid
+        if (!albumData || albumData.length === 0) {
+            console.error("Album data is empty or undefined!");
+        } else {
+            console.log("Album data loaded successfully:", albumData);
         }
 
-        // Function to calculate intersection ratio
-        requestAnimationFrame(() => {
+        // Create and append boxes using createElement
+        const body = document.body;
+
+        // Adding a small space before the boxes
+        const spacer = document.createElement("div");
+        spacer.style.height = "50px";
+        body.appendChild(spacer);
+
+        albumData.forEach((album, index) => {
+            const imagePath = `/static/${album.id}_front.jpg`; // Construct the image path
+
+            if (album.id) {
+                // Create .box element
+                const box = document.createElement("div");
+                box.className = "box";
+
+                // Create child div with background image
+                const childDiv = document.createElement("div");
+                childDiv.style.backgroundImage = `url('${imagePath}')`;
+                childDiv.style.backgroundSize = "cover";
+                childDiv.style.backgroundPosition = "center";
+
+                // Append child div to box
+                box.appendChild(childDiv);
+
+                // Append box to body
+                body.appendChild(box);
+
+                console.log(`Album ${index} created with ID: ${album.id}`);
+            } else {
+                console.error(`Album ${index} is missing ID:`, album);
+            }
+        });
+
+        // Wait until the DOM is fully updated before running the script
+        setTimeout(() => {
+            console.log("DOM updated. Starting animations...");
+            // Function to calculate intersection ratio
             const boxes = document.querySelectorAll(".box");
 
             function getIntersectionRatio(i) {
@@ -116,22 +105,26 @@
             }
 
             function onScroll() {
-                const boxes = document.querySelectorAll(".box");
                 for (let i = 0; i < boxes.length; i += 1) {
                     const intersection = getIntersectionRatio(i);
                     const top = boxes[i].offsetTop - window.pageYOffset < 0;
-                    boxes[i].firstChild.style.cssText = `
-                        transform-origin: ${top ? "center center" : "top center"};
-                        position: ${top ? "fixed" : "absolute"};
-                        transform: scale(${intersection});
-                        opacity: ${intersection};
-                    `;
+
+                    // Defensive check with precise style updates
+                    if (boxes[i].firstChild) {
+                        const child = boxes[i].firstChild;
+                        child.style.transformOrigin = `${top ? "center center" : "top center"}`;
+                        child.style.position = `${top ? "fixed" : "absolute"}`;
+                        child.style.transform = `scale(${intersection})`;
+                        child.style.opacity = `${intersection}`;
+                    } else {
+                        console.warn(`Box ${i} is missing a valid child for styling.`);
+                    }
                 }
                 requestAnimationFrame(onScroll);
             }
 
             onScroll();
-        });
+        }, 100); // Small delay to ensure DOM is ready
     </script>
 </body>
 </html>
