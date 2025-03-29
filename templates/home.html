@@ -83,9 +83,20 @@
             opacity: 0; /* Fully transparent */
             pointer-events: none; /* Disable interactions after fade-out */
         }
+
+        .logo {
+            position: fixed;
+            top: 10px; /* Adjust top margin */
+            left: 10px; /* Adjust left margin */
+            width: 200px; /* Set a width for the logo */
+            height: auto; /* Maintain aspect ratio */
+            z-index: 1000; /* Ensure it's on top of other content */
+        }
     </style>
 </head>
 <body>
+    <img src="../static/dJ_logo.png" alt="Logo" class="logo">
+
     <!-- Display Area for Showing Associated Text -->
     <div class="display-area" id="displayArea">Click a box to see album details here</div>
 

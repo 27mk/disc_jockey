@@ -79,20 +79,22 @@
 </div>
 
 <div class="controls fade-in">
-    <button class="button" id="playButton">Start</button>
-    <button class="button" id="pauseButton" disabled>Stop</button>
-    <button class="button" id="testButton">Pause</button> <!-- New Test button -->
+    <button class="button" id="playButton">▶</button>
+    <button class="button" id="pauseButton" disabled>■</button>
+    <button class="button" id="tsstButton">⏸︎</button>
+    <button class="button" id="testButton">↻</button>
 </div>
 
 <div class="album-info fade-in" id="albumInfo"></div>
 
 <!-- Audio player (hidden) -->
-<audio id="audioPlayer" src="../static/24124439_A.mp3"></audio>
+<audio id="audioPlayer" src=""></audio>
 
 <script>
     let recordGroup = document.getElementById("recordGroup");
     let playButton = document.getElementById("playButton");
     let pauseButton = document.getElementById("pauseButton");
+    let testButton = document.getElementById("testButton");
 
     let audioPlayer = document.getElementById("audioPlayer");
 
@@ -102,6 +104,8 @@
     let speedIncrement = 1; // Acceleration amount
     let maxSpeed = 200; // Max rotation speed (degrees per second)
     let animationFrame;
+
+    let currentSide = "A"; // Track the current side
 
     // Rotate the record player
     function rotateRecord() {
@@ -147,13 +151,29 @@
         }, 1000);  // Wait for 5 seconds before stopping
     });
 
+    // Switch between Side A and Side B
+    testButton.addEventListener("click", function () {
+        if (currentSide === "A") {
+            currentSide = "B";
+        } else {
+            currentSide = "A";
+        }
+        loadAudioFile(albumData.id, currentSide);
+    });
+
+    // Load audio file based on album ID and side
+    function loadAudioFile(albumId, side) {
+        audioPlayer.src = `../static/${albumId}_${side}.mp3`;
+        audioPlayer.load();
+    }
+
     // Album data passed from Flask
-    const albumData = {{ album|tojson }}; 
+    const albumData = {{ album|tojson }};
 
     // Function to display album data
     function displayAlbumData(album) {
         const albumInfoDiv = document.getElementById("albumInfo");
-        albumInfoDiv.innerHTML = `  
+        albumInfoDiv.innerHTML = `
             <h2>${album.name}</h2>
             <p><strong>Artist:</strong> ${album.artists.join(", ")}</p>
             <p><strong>Release Year:</strong> ${album.release_year}</p>
@@ -173,6 +193,9 @@
 
         const recordImage = document.getElementById("record");
         recordImage.setAttribute("href", `../static/${album.id}_record.png`);
+
+        // Load initial audio file
+        loadAudioFile(album.id, currentSide);
     }
 
     displayAlbumData(albumData);
@@ -180,4 +203,3 @@
 
 </body>
 </html>
-
