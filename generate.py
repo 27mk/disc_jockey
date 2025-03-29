@@ -41,7 +41,7 @@ def generate_image_for_album(album_id, tracklist):
         draw = ImageDraw.Draw(img)
 
         color_dark = (0, 0, 0, 255)
-        color_light = (10, 10, 10, 255)
+        color_light = (20, 20, 20, 255)
 
         draw.pieslice(
             [center[0] - outer_radius, center[1] - outer_radius, center[0] + outer_radius, center[1] + outer_radius],

@@ -99,6 +99,19 @@ def home():
 
     return render_template("home.html", album_data=album_data)
 
+@app.route("/play-album")
+def play_album():
+    album_id = request.args.get("id")
+    album_data = get_collection()
+
+    # Find the album with the matching ID
+    album = next((a for a in album_data if str(a["id"]) == album_id), None)
+
+    if not album:
+        return "Album not found", 404
+
+    return render_template("play_album.html", album=album)
+
 if __name__ == "__main__":
     app.run(debug=True)
 

@@ -11,6 +11,7 @@
             margin: 0;
             background-color: white;
             font-family: 'DM Sans', sans-serif; /* Apply DM Sans globally */
+            transition: opacity 0.5s ease; /* Smooth fade-out effect for the body */
         }
 
         * {
@@ -66,19 +67,40 @@
             overflow: auto; /* Allow scrolling for longer content */
         }
 
+        .go-to-album {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            font-size: 16px;
+            color: black;
+            text-decoration: underline; /* Underlined text */
+            cursor: pointer; /* Show a pointer cursor on hover */
+            opacity: 0; /* Start hidden */
+            transition: opacity 0.5s ease; /* Smooth fade-in/out */
+        }
+
+        .fade-out {
+            opacity: 0; /* Fully transparent */
+            pointer-events: none; /* Disable interactions after fade-out */
+        }
     </style>
 </head>
 <body>
     <!-- Display Area for Showing Associated Text -->
     <div class="display-area" id="displayArea">Click a box to see album details here</div>
 
+    <!-- Go to Album Text -->
+    <div class="go-to-album" id="goToAlbum">Go to Album</div>
+
     <script>
         // Passing the albumData dynamically
         const albumData = {{ album_data | tojson }};  // Dynamically provided JSON data
 
-        // Function to update the display area with detailed album info
+        // References to display area and "Go to Album" link
         const displayArea = document.getElementById("displayArea");
+        const goToAlbum = document.getElementById("goToAlbum");
 
+        // Function to update the display area with detailed album info
         function updateDisplayArea(album) {
             // Reset the display area content
             displayArea.innerHTML = `
@@ -97,6 +119,16 @@
                 </div>
             `;
             displayArea.style.opacity = "1"; // Make display area visible
+
+            // Update the "Go to Album" link visibility and behavior
+            goToAlbum.style.opacity = "1"; // Make "Go to Album" visible
+            goToAlbum.onclick = () => {
+                // Redirect to the album page with its ID as a query parameter
+                document.body.classList.add("fade-out");
+                setTimeout(() => {
+                    window.location.href = `/play-album?id=${album.id}`;
+                }, 500); // Match the fade-out transition duration
+            };
         }
 
         // Create and append boxes using createElement
@@ -134,10 +166,10 @@
             }
         });
 
-        // Scroll Event: Fade out the display area and animate boxes
+        // Scroll Event: Fade out the display area and "Go to Album" text
         window.addEventListener("scroll", () => {
-            // Fade out display area
-            displayArea.style.opacity = "0";
+            displayArea.style.opacity = "0"; // Fade out the display area
+            goToAlbum.style.opacity = "0"; // Fade out the "Go to Album" link
 
             // Animate fading boxes
             const boxes = document.querySelectorAll(".box");
