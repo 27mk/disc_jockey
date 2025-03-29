@@ -4,9 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>discJockey</title>
+    <!-- Importing DM Sans font from Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         body {
             margin: 0;
+            background-color: white;
+            font-family: 'DM Sans', sans-serif; /* Apply DM Sans globally */
         }
 
         * {
@@ -17,41 +21,82 @@
         .box {
             width: 400px;  /* Box width */
             height: 400px; /* Box height */
-            color: white;
             margin: 0 auto;
             margin-bottom: 50px;
-            position: relative;  /* Make sure the box is positioned relative */
+            position: relative; /* Relative positioning ensures contained absolute elements */
+            display: flex;  /* Use flexbox to align items */
+            justify-content: space-between;
+            align-items: center;
+            overflow: hidden;
+            cursor: pointer; /* Make the boxes look clickable */
         }
 
         .box > div {
-            display: flex;
             position: absolute;
             top: 0;
             width: 400px; /* Box width */
             height: 400px; /* Box height */
             background-size: cover;
             background-position: center;
-            justify-content: space-between;
-            flex-direction: column;
-            padding: 16px;
             border-radius: 16px;
-            box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.2);
+            box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.2); /* Shadow on the album cover */
             transform-origin: top center;
             will-change: transform;
             overflow: hidden;
         }
+
+        .display-area {
+            font-family: 'DM Sans', sans-serif; /* Apply DM Sans to display area */
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 300px;
+            min-height: 100px;
+            padding: 10px;
+            border: none; /* Removed border */
+            border-radius: 8px;
+            background-color: #ffffff; /* Solid white background */
+            font-size: 14px; /* Slightly smaller font for better readability */
+            color: black;
+            text-align: left; /* Align text to the left */
+            display: flex;
+            flex-direction: column; /* Stack text fields vertically */
+            opacity: 0; /* Start hidden */
+            transition: opacity 0.5s ease; /* Smooth fade-in/out */
+            overflow: auto; /* Allow scrolling for longer content */
+        }
+
     </style>
 </head>
 <body>
-    <script>
-        // Passing the album data directly from Flask
-        const albumData = {{ album_data | tojson }};  // Converts the album_data to a JavaScript object
+    <!-- Display Area for Showing Associated Text -->
+    <div class="display-area" id="displayArea">Click a box to see album details here</div>
 
-        // Check if albumData is valid
-        if (!albumData || albumData.length === 0) {
-            console.error("Album data is empty or undefined!");
-        } else {
-            console.log("Album data loaded successfully:", albumData);
+    <script>
+        // Passing the albumData dynamically
+        const albumData = {{ album_data | tojson }};  // Dynamically provided JSON data
+
+        // Function to update the display area with detailed album info
+        const displayArea = document.getElementById("displayArea");
+
+        function updateDisplayArea(album) {
+            // Reset the display area content
+            displayArea.innerHTML = `
+                <h3>${album.name}</h3>
+                <p><strong>Artists:</strong> ${album.artists.join(", ")}</p>
+                <p><strong>Year:</strong> ${album.release_year}</p>
+                <p><strong>Genres:</strong> ${album.genres.join(", ")}</p>
+                <div class="tracklist">
+                    <h4>Tracklist:</h4>
+                    ${Object.entries(album.tracklist).map(([side, tracks]) => `
+                        <h5>${side}</h5>
+                        <ul>
+                            ${tracks.map(track => `<li>${track.title}</li>`).join("")}
+                        </ul>
+                    `).join("")}
+                </div>
+            `;
+            displayArea.style.opacity = "1"; // Make display area visible
         }
 
         // Create and append boxes using createElement
@@ -62,7 +107,7 @@
         spacer.style.height = "50px";
         body.appendChild(spacer);
 
-        albumData.forEach((album, index) => {
+        albumData.forEach((album) => {
             const imagePath = `/static/${album.id}_front.jpg`; // Construct the image path
 
             if (album.id) {
@@ -73,58 +118,57 @@
                 // Create child div with background image
                 const childDiv = document.createElement("div");
                 childDiv.style.backgroundImage = `url('${imagePath}')`;
-                childDiv.style.backgroundSize = "cover";
-                childDiv.style.backgroundPosition = "center";
 
-                // Append child div to box
+                // Add click event to the box
+                box.onclick = () => {
+                    updateDisplayArea(album); // Show album details
+                };
+
+                // Append child div (image) to box
                 box.appendChild(childDiv);
-
-                // Append box to body
                 body.appendChild(box);
 
-                console.log(`Album ${index} created with ID: ${album.id}`);
+                console.log(`Album ${album.id} created with name: ${album.name}`);
             } else {
-                console.error(`Album ${index} is missing ID:`, album);
+                console.error(`Album is missing ID:`, album);
             }
         });
+
+        // Scroll Event: Fade out the display area and animate boxes
+        window.addEventListener("scroll", () => {
+            // Fade out display area
+            displayArea.style.opacity = "0";
+
+            // Animate fading boxes
+            const boxes = document.querySelectorAll(".box");
+            boxes.forEach((box, i) => {
+                const intersection = getIntersectionRatio(i);
+                if (box.firstChild) {
+                    const child = box.firstChild;
+                    child.style.transformOrigin = "top center";
+                    child.style.position = "absolute";
+                    child.style.transform = `scale(${intersection})`;
+                    child.style.opacity = `${intersection}`;
+                }
+            });
+        });
+
+        // Function to calculate intersection ratio
+        function getIntersectionRatio(i) {
+            const boxes = document.querySelectorAll(".box");
+            const a = [window.scrollY, window.scrollY + window.innerHeight];
+            const b = [boxes[i].offsetTop, boxes[i].offsetTop + boxes[i].clientHeight];
+
+            const max = Math.max(a[0], b[0]);
+            const min = Math.min(a[1], b[1]);
+
+            return Math.max(0, (min - max) / (b[1] - b[0])); // Ensure ratio is calculated correctly
+        }
 
         // Wait until the DOM is fully updated before running the script
         setTimeout(() => {
             console.log("DOM updated. Starting animations...");
-            // Function to calculate intersection ratio
-            const boxes = document.querySelectorAll(".box");
-
-            function getIntersectionRatio(i) {
-                const a = [window.scrollY, window.scrollY + window.innerHeight];
-                const b = [boxes[i].offsetTop, boxes[i].offsetTop + boxes[i].clientHeight];
-
-                const max = Math.max(a[0], b[0]);
-                const min = Math.min(a[1], b[1]);
-
-                return Math.max(0, (min - max) / (b[1] - b[0]));
-            }
-
-            function onScroll() {
-                for (let i = 0; i < boxes.length; i += 1) {
-                    const intersection = getIntersectionRatio(i);
-                    const top = boxes[i].offsetTop - window.pageYOffset < 0;
-
-                    // Defensive check with precise style updates
-                    if (boxes[i].firstChild) {
-                        const child = boxes[i].firstChild;
-                        child.style.transformOrigin = `${top ? "center center" : "top center"}`;
-                        child.style.position = `${top ? "fixed" : "absolute"}`;
-                        child.style.transform = `scale(${intersection})`;
-                        child.style.opacity = `${intersection}`;
-                    } else {
-                        console.warn(`Box ${i} is missing a valid child for styling.`);
-                    }
-                }
-                requestAnimationFrame(onScroll);
-            }
-
-            onScroll();
-        }, 100); // Small delay to ensure DOM is ready
+        }, 100);
     </script>
 </body>
 </html>
