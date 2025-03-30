@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>discJockey</title>
-    <!-- Importing DM Sans font from Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         body {
@@ -91,6 +90,36 @@
             width: 200px; /* Set a width for the logo */
             height: auto; /* Maintain aspect ratio */
             z-index: 1000; /* Ensure it's on top of other content */
+        }
+        
+        p, h4, h5, ul {
+            margin: 0;
+            padding: 0;
+        }  
+        
+        h3 {
+            margin: 30;
+            padding: 20;
+        }
+
+        .tracklist {
+            margin-top: 10px;
+        }
+    
+        .tracklist ul {
+            padding-left: 20px;
+            list-style-type: none;
+            margin-bottom: 20px;
+        }
+
+        .tracklist ul::li {
+            position: relative;
+        }
+
+        .tracklist ul li::before {
+            content: "-";
+            position: absolute;
+            left: -20px;
         }
     </style>
 </head>

@@ -234,27 +234,34 @@
         "tracklist": {
             "Side A": [
                 {
-                    "title": "Take Me"
+                    "title": "Take Me",
+                    "length": 289
                 },
                 {
-                    "title": "Asayake"
+                    "title": "Asayake",
+                    "length": 298
                 },
                 {
-                    "title": "Midnight Rendezvous"
+                    "title": "Midnight Rendezvous",
+                    "length": 297
                 },
                 {
-                    "title": "Time Limit"
+                    "title": "Time Limit",
+                    "length": 157
                 }
             ],
             "Side B": [
                 {
-                    "title": "Domino Line"
+                    "title": "Domino Line",
+                    "length": 440
                 },
                 {
-                    "title": "Tears Of The Star"
+                    "title": "Tears Of The Star",
+                    "length": 268
                 },
                 {
-                    "title": "Swear"
+                    "title": "Swear",
+                    "length": 407
                 }
             ]
         }

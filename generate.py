@@ -42,22 +42,40 @@ def generate_image_for_album(album_id, tracklist):
 
         color_dark = (0, 0, 0, 255)
         color_light = (20, 20, 20, 255)
+        separator_color = (0, 0, 0, 255)  # Black separator lines
+        separator_width = 10  # Fixed width for black separators
 
+        # Draw the base black record
         draw.pieslice(
             [center[0] - outer_radius, center[1] - outer_radius, center[0] + outer_radius, center[1] + outer_radius],
             0, 360, fill=color_dark
         )
 
-        # Change this from being randomized to being based on JSON data
+        # Randomized track widths with fixed separators
         current_radius = outer_radius
         while current_radius > inner_radius:
             track_width = random.randint(40, 100)  # Random varied width
-            track_color = color_light if random.random() > 0.5 else color_dark  # Random selection of the two colors
+
+            # Ensure the last track fits within the remaining space
+            if current_radius - track_width < inner_radius:
+                track_width = current_radius - inner_radius  
+
+            track_color = color_light if random.random() > 0.5 else color_dark  
             draw.pieslice(
-                [center[0] - current_radius, center[1] - current_radius, center[0] + current_radius, center[1] + current_radius],
+                [center[0] - current_radius, center[1] - current_radius, 
+                 center[0] + current_radius, center[1] + current_radius],
                 0, 360, fill=track_color
             )
             current_radius -= track_width
+
+            # Draw separator line
+            if current_radius > inner_radius:
+                draw.pieslice(
+                    [center[0] - current_radius, center[1] - current_radius, 
+                     center[0] + current_radius, center[1] + current_radius],
+                    0, 360, fill=separator_color
+                )
+                current_radius -= separator_width  # Always subtract the fixed width
 
         # Draw the lighter center area around the sticker
         draw.pieslice(
@@ -66,7 +84,6 @@ def generate_image_for_album(album_id, tracklist):
         )
 
         sticker_image = resize_and_crop_sticker(sticker_path, target_size=(2 * inner_radius, 2 * inner_radius))
-
         img.paste(sticker_image, (center[0] - inner_radius, center[1] - inner_radius), sticker_image)
 
         img.save(output_path)
@@ -84,7 +101,6 @@ def process_album_data(album_data):
         album_id = album.get("id")
         tracklist = album.get("tracklist", {})
 
-        # Check if album data is missing tracklist or ID
         if not album_id:
             print(f"Skipping album with missing ID.")
             continue
@@ -95,9 +111,8 @@ def process_album_data(album_data):
 
         generate_image_for_album(album_id, tracklist)
 
-# Function to resize and crop the sticker image
 def resize_and_crop_sticker(sticker_path, target_size=(600, 600)):
-    print(f"Resizing and cropping sticker: {sticker_path}")  # Debug print
+    print(f"Resizing and cropping sticker: {sticker_path}")
     try:
         sticker = Image.open(sticker_path)
         sticker = sticker.resize(target_size, Image.LANCZOS)
