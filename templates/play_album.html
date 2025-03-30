@@ -17,11 +17,11 @@
         }
         .logo {
             position: fixed;
-            top: 10px; 
-            left: 10px; 
-            width: 200px; 
-            height: auto; 
-            z-index: 1000; 
+            top: 10px;
+            left: 10px;
+            width: 200px;
+            height: auto;
+            z-index: 1000;
         }
         .container {
             position: relative;
@@ -100,26 +100,28 @@
             <image id="record" href="" x="100" y="100" width="500" height="500" />
             <circle cx="350" cy="350" r="10" fill="silver" />
         </g>
-        <line id="needle" x1="625" y1="150" x2="625" y2="500" stroke="black" stroke-width="5" />
+        <line id="needle" x1="600" y1="150" x2="600" y2="500" stroke="red" stroke-width="5" />
     </svg>
 </div>
 
 <div class="controls fade-in">
-    <button class="button" id="playButton">▶</button>
-    <button class="button" id="pauseButton" disabled>■</button>
-    <button class="button" id="tsstButton">⏸︎</button>
-    <button class="button" id="testButton">↻</button>
+    <button class="button" id="startButton">▶</button>
+    <button class="button" id="stopButton" disabled>■</button>
+    <button class="button" id="pauseButton">⏸︎</button>
+    <button class="button" id="flipButton">↻</button>
 </div>
 
 <div class="album-info fade-in" id="albumInfo"></div>
 
 <audio id="audioPlayer" src=""></audio>
 
+
 <script>
     let recordGroup = document.getElementById("recordGroup");
-    let playButton = document.getElementById("playButton");
-    let pauseButton = document.getElementById("pauseButton");
-    let testButton = document.getElementById("testButton");
+    let recordImage = document.getElementById("record"); // Add this line
+    let startButton = document.getElementById("startButton");
+    let stopButton = document.getElementById("stopButton");
+    let flipButton = document.getElementById("flipButton");
     let audioPlayer = document.getElementById("audioPlayer");
     let needle = document.getElementById("needle");
     let isSpinning = false;
@@ -128,7 +130,8 @@
     let rotationSpeed = 0;
     let speedIncrement = 1;
     let maxSpeed = 200;
-    let animationFrame;
+    let recordAnimationFrame;
+    let needleAnimationFrame;
     let currentSide = "A";
 
     function rotateRecord() {
@@ -143,49 +146,88 @@
                 rotationSpeed -= speedIncrement;
             } else {
                 rotationSpeed = 0;
-                cancelAnimationFrame(animationFrame);
+                cancelAnimationFrame(recordAnimationFrame);
                 return;
             }
         }
-        animationFrame = requestAnimationFrame(rotateRecord);
+        recordAnimationFrame = requestAnimationFrame(rotateRecord);
     }
 
-    function moveNeedle() {
-        let currentTime = audioPlayer.currentTime;
-        let duration = audioPlayer.duration;
-        let angle = (currentTime / duration) * 90; // Adjust the angle calculation as needed
-        needle.setAttribute("transform", `rotate(${angle}, 350, 350)`);
-        if (isPlaying) {
-            requestAnimationFrame(moveNeedle);
+    function animateNeedle(startX, startY, finishX, finishY, moveSpeed) {
+        let pivotX = startX;
+        let pivotY = startY;
+        let length = 350; // Fixed length of the needle
+        let duration = moveSpeed; // Duration in milliseconds
+        let startTime = null;
+
+        function animateNeedleFrame(timestamp) {
+            if (!startTime) startTime = timestamp;
+            let progress = timestamp - startTime;
+            let percentage = Math.min(progress / duration, 1);
+
+            let startAngle = Math.atan2(500 - pivotY, 600 - pivotX);
+            let endAngle = Math.atan2(finishY - pivotY, finishX - pivotX);
+            let currentAngle = startAngle + (endAngle - startAngle) * percentage;
+
+            // Calculate the new end position based on the current angle
+            let currentX = pivotX + length * Math.cos(currentAngle);
+            let currentY = pivotY + length * Math.sin(currentAngle);
+
+            needle.setAttribute("x2", currentX);
+            needle.setAttribute("y2", currentY);
+
+            if (percentage < 1) {
+                needleAnimationFrame = requestAnimationFrame(animateNeedleFrame);
+            }
         }
-    }
 
-    function startNeedle() {
-        needle.setAttribute("x2", "100");
-        needle.setAttribute("y2", "100");
+        needleAnimationFrame = requestAnimationFrame(animateNeedleFrame);
     }
 
     function stopNeedle() {
-        needle.setAttribute("x2", "350");
-        needle.setAttribute("y2", "250");
+        let currentPosition = getNeedlePosition();
+        animateNeedle(currentPosition.x, currentPosition.y, 600, 150, 2000); // Adjust the duration as needed
     }
 
-    playButton.addEventListener("click", function () {
-        playButton.disabled = true;
-        pauseButton.disabled = false;
+    function startNeedle() {
+        // Animate the needle to the start of the record
+        animateNeedle(600, 150, 530, 480, 2000);
+
+        // Calculate needle speed based on the duration of the audio file
+        audioPlayer.addEventListener('loadedmetadata', function() {
+            let duration = audioPlayer.duration * 1000; // Duration in milliseconds
+            animateNeedle(530, 480, 390, 425, duration);
+        });
+    }
+
+    function pauseNeedle() {
+        // Implement pause functionality if needed
+    }
+
+    function getNeedlePosition() {
+        let needle = document.getElementById("needle");
+        let x2 = needle.getAttribute("x2");
+        let y2 = needle.getAttribute("y2");
+
+        return { x: parseFloat(x2), y: parseFloat(y2) };
+    }
+
+    startButton.addEventListener("click", function () {
+        startButton.disabled = true;
+        stopButton.disabled = false;
         startNeedle();
         setTimeout(() => {
             audioPlayer.play();
             isSpinning = true;
             isPlaying = true;
-            animationFrame = requestAnimationFrame(rotateRecord);
-            moveNeedle();
+            recordAnimationFrame = requestAnimationFrame(rotateRecord);
         }, 1000);
     });
 
-    pauseButton.addEventListener("click", function () {
-        playButton.disabled = false;
-        pauseButton.disabled = true;
+    stopButton.addEventListener("click", function () {
+        startButton.disabled = false;
+        stopButton.disabled = true;
+        stopNeedle();
         setTimeout(() => {
             audioPlayer.pause();
             isSpinning = false;
@@ -193,7 +235,7 @@
         }, 1000);
     });
 
-    testButton.addEventListener("click", function () {
+    flipButton.addEventListener("click", function () {
         if (currentSide === "A") {
             currentSide = "B";
         } else {
@@ -237,4 +279,3 @@
 
 </body>
 </html>
-
