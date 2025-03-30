@@ -99,7 +99,7 @@
             <image id="record" href="" x="100" y="100" width="500" height="500" />
             <circle cx="350" cy="350" r="10" fill="silver" />
         </g>
-            <img id="needle" src="../static/needle.png" style="position: absolute; top: 100px; left: 550px; width: 120px;">
+            <img id="needle" src="../static/needle.png" style="position: absolute; top: 100px; left: 550px; width: 130px;">
     </svg>
 </div>
 
@@ -132,6 +132,8 @@
     let recordAnimationFrame;
     let needleAnimationFrame;
     let currentSide = "A";
+    let angle = 0;
+
 
     function rotateRecord() {
         currentRotation += rotationSpeed / 60;
@@ -152,69 +154,117 @@
         recordAnimationFrame = requestAnimationFrame(rotateRecord);
     }
 
+    // Function to start the needle rotation
     function startNeedle() {
-        let angle = 0;
         const initialAngle = 13;
         const finalAngle = 42;
-        needle.style.transformOrigin = "50% 25%"; // Set the anchor point at the top center of the image
+        let totalRunningTime = audioPlayer.duration; // Get the total running time of the audio file in seconds
 
-	function rotateNeedle() {
-	    if (angle < targetAngle) {
-	        angle += 0.2;
-	        needle.style.transform = `rotate(${angle}deg)`;
-	        needleAnimationFrame = requestAnimationFrame(rotateNeedle);
-	    } else {
-	        cancelAnimationFrame(needleAnimationFrame); // Stop the animation
-	    }
-	}
+        // Check if the duration is available
+        if (isNaN(totalRunningTime) || totalRunningTime === 0) {
+            audioPlayer.addEventListener('loadedmetadata', () => {
+                totalRunningTime = audioPlayer.duration;
+                startNeedleRotation();
+            });
+        } else {
+            startNeedleRotation();
+        }
 
-        rotateNeedle();
+        function startNeedleRotation() {
+            const rotationRate = (finalAngle - initialAngle) / totalRunningTime;
+            console.log(`Rotation Rate: ${rotationRate} degrees per second`);
+            needle.style.transformOrigin = "50% 25%"; // Adjust the anchor point slightly down from the top center
+
+            function rotateNeedle() {
+                const elapsedTime = audioPlayer.currentTime;
+                angle = initialAngle + rotationRate * elapsedTime;
+                if (angle <= finalAngle) {
+                    needle.style.transform = `rotate(${angle}deg)`;
+                    needleAnimationFrame = requestAnimationFrame(rotateNeedle);
+                } else {
+                    cancelAnimationFrame(needleAnimationFrame); // Stop the animation
+                }
+            }
+
+            // Initial rotation to the edge of the record
+            function initialRotateNeedle() {
+                if (angle < initialAngle) {
+                    angle += 0.2; // Adjust the initial rotation speed as needed
+                    needle.style.transform = `rotate(${angle}deg)`;
+                    needleAnimationFrame = requestAnimationFrame(initialRotateNeedle);
+                } else {
+                    cancelAnimationFrame(needleAnimationFrame); // Stop the initial rotation
+                    rotateNeedle(); // Start the slow rotation during playback
+                }
+            }
+
+            initialRotateNeedle();
+        }
     }
 
+    // Function to smoothly return the needle to 0 degrees
+    function returnNeedleToRest(callback) {
+        function rotateBack() {
+            if (angle > 0) {
+                angle -= 0.2; // Adjust the return speed as needed
+                needle.style.transform = `rotate(${angle}deg)`;
+                needleAnimationFrame = requestAnimationFrame(rotateBack);
+            } else {
+                cancelAnimationFrame(needleAnimationFrame); 
+                angle = 0; // Ensure the angle is exactly 0
+                needle.style.transform = `rotate(${angle}deg)`;
+                if (callback) callback();
+            }
+        }
 
-    function stopNeedle() {
-
+        rotateBack();
     }
 
+    // Function to pause the needle rotation
     function pauseNeedle() {
-
+        cancelAnimationFrame(needleAnimationFrame); // Stop the animation
     }
 
-    function getNeedlePosition() {
+    // Add event listener for when the audio ends
+    audioPlayer.addEventListener('ended', returnNeedleToRest);
 
-    }
+    <!-- STOP BUTTON -->
+    stopButton.addEventListener('click', function () {
+        pauseNeedle(); 
+        isSpinning = false;
+	    
+        returnNeedleToRest(() => {
+            startButton.disabled = false;
+            flipButton.disabled = false;
+        }); 
 
-    startButton.addEventListener("click", function () {
+        audioPlayer.pause(); 
+        audioPlayer.currentTime = 0; 
+    });
+
+    <!-- PAUSE BUTTON -->
+    pauseButton.addEventListener('click', function () {
+        pauseNeedle(); // Pause the needle rotation
+        audioPlayer.pause(); // Pause the audio playback
+    });
+
+    <!-- START BUTTON -->
+    startButton.addEventListener('click', function () {
         startButton.disabled = true;
         stopButton.disabled = false;
         flipButton.disabled = true;
 
         isSpinning = true;
         recordAnimationFrame = requestAnimationFrame(rotateRecord);
-
-        setTimeout(() => {
+ 
+       setTimeout(() => {
             startNeedle();
-        }, 1000);
-
-        setTimeout(() => {
             audioPlayer.play();
             isPlaying = true;
-        }, 1000);
-
+        }, 2000);
     });
 
-    stopButton.addEventListener("click", function () {
-        startButton.disabled = false;
-        flipButton.disabled = false;
-        stopButton.disabled = true;
-        stopNeedle();
-        setTimeout(() => {
-            audioPlayer.pause();
-            isSpinning = false;
-            isPlaying = false;
-        }, 100);
-    });
-
+    <!-- FLIP BUTTON -->
     flipButton.addEventListener("click", function () {
         if (currentSide === "A") {
             currentSide = "B";
