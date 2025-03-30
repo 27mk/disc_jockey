@@ -86,7 +86,6 @@ def get_collection():
 
         time.sleep(1)
 
-    # Save the newly fetched album data to a local JSON file
     with open("album_data.json", "w") as json_file:
         json.dump(data, json_file, indent=4)
 
@@ -95,8 +94,7 @@ def get_collection():
 
 @app.route("/")
 def home():
-    album_data = get_collection()  # This now checks for the local file first
-
+    album_data = get_collection()  
     return render_template("home.html", album_data=album_data)
 
 @app.route("/play-album")
@@ -104,7 +102,6 @@ def play_album():
     album_id = request.args.get("id")
     album_data = get_collection()
 
-    # Find the album with the matching ID
     album = next((a for a in album_data if str(a["id"]) == album_id), None)
 
     if not album:
